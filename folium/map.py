@@ -171,6 +171,19 @@ class LegacyMap(MacroElement):
                                            drawControl: true
                                            {% endif %}
                                          });
+            {% if this.draw %}
+                // Initialise the FeatureGroup to store editable layers
+                var drawnItems = new L.FeatureGroup();
+                {{this.get_name()}}.addLayer(drawnItems);
+
+                // Initialise the draw control and pass it the FeatureGroup of editable layers
+                var drawControl = new L.Control.Draw({
+                    edit: {
+                        featureGroup: drawnItems
+                    }
+                });
+                {{this.get_name()}}.addControl(drawControl);
+            {% endif %}
             {% if this.control_scale %}L.control.scale().addTo({{this.get_name()}});{% endif %}
         {% endmacro %}
         """)
