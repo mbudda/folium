@@ -102,10 +102,11 @@ class LegacyMap(MacroElement):
                  tiles='OpenStreetMap', API_key=None, max_zoom=18, min_zoom=1,
                  zoom_start=10, attr=None, min_lat=-90, max_lat=90,
                  min_lon=-180, max_lon=180, detect_retina=False,
-                 crs='EPSG3857', control_scale=False):
+                 crs='EPSG3857', control_scale=False, draw=False):
         super(LegacyMap, self).__init__()
         self._name = 'Map'
-
+        self.draw = draw
+        
         if not location:
             # If location is not passed we center and ignore zoom.
             self.location = [0, 0]
@@ -165,7 +166,10 @@ class LegacyMap(MacroElement):
                                            zoom: {{this.zoom_start}},
                                            maxBounds: bounds,
                                            layers: [],
-                                           crs: L.CRS.{{this.crs}}
+                                           crs: L.CRS.{{this.crs}},
+                                           {% if this.draw %}
+                                           drawControl: true
+                                           {% endif %}
                                          });
             {% if this.control_scale %}L.control.scale().addTo({{this.get_name()}});{% endif %}
         {% endmacro %}
