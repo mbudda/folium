@@ -147,6 +147,8 @@ class LegacyMap(MacroElement):
                 }
             </style>
             <script type="text/javascript" src="js/leaflet.smoothmarkerbouncing.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.0/leaflet.draw.css"/>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.0/leaflet.draw.js"></script>
         {% endmacro %}
         {% macro html(this, kwargs) %}
             <div class="folium-map" id="{{this.get_name()}}" ></div>
