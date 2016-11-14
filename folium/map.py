@@ -102,7 +102,7 @@ class LegacyMap(MacroElement):
                  tiles='OpenStreetMap', API_key=None, max_zoom=18, min_zoom=1,
                  zoom_start=10, attr=None, min_lat=-90, max_lat=90,
                  min_lon=-180, max_lon=180, detect_retina=False,
-                 crs='EPSG3857', control_scale=False, draw=False):
+                 crs='EPSG3857', control_scale=False, draw=False, geo_layers=[]):
         super(LegacyMap, self).__init__()
         self._name = 'Map'
         self.draw = draw
@@ -147,9 +147,8 @@ class LegacyMap(MacroElement):
                 top: {{this.top[0]}}{{this.top[1]}};
                 }
             </style>
-            <script type="text/javascript" src="js/leaflet.smoothmarkerbouncing.js"></script>
-            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.0/leaflet.draw.css"/>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.0/leaflet.draw.js"></script>
+            
+            <script type="text/javascript" src="../js/leaflet.smoothmarkerbouncing.js"></script>
         {% endmacro %}
         {% macro html(this, kwargs) %}
             <div class="folium-map" id="{{this.get_name()}}" ></div>
@@ -161,30 +160,53 @@ class LegacyMap(MacroElement):
             var northEast = L.latLng({{ this.max_lat }}, {{ this.max_lon }});
             var bounds = L.latLngBounds(southWest, northEast);
 
+            var terrain_tiles = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {maxZoom:20})
+            var topo_tiles = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {maxZoom:20})
+            var base_tiles = L.tileLayer('http://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png', {maxZoom:20})
+            var os_tiles = L.tileLayer('https://api2.ordnancesurvey.co.uk/mapping_api/v1/service/zxy/EPSG%3A3857/Outdoor 3857/{z}/{x}/{y}.png?key=gEE5SjRFBeBLHs2qzar1SKmPODsi5LKp', {maxZoom:20})
+
+            var map_tiles = {'terrain':terrain_tiles, 'topography':topo_tiles, 'basic':base_tiles, 'os':os_tiles}
+
             var {{this.get_name()}} = L.map('{{this.get_name()}}', {
                                            center:[{{this.location[0]}},{{this.location[1]}}],
                                            zoom: {{this.zoom_start}},
                                            maxBounds: bounds,
-                                           layers: [],
-                                           crs: L.CRS.{{this.crs}},
-                                           {% if this.draw %}
-                                           drawControl: true
-                                           {% endif %}
+                                           layers: [base_tiles],
+                                           crs: L.CRS.{{this.crs}}
                                          });
-            {% if this.draw %}
-                // Initialise the FeatureGroup to store editable layers
-                var drawnItems = new L.FeatureGroup();
-                {{this.get_name()}}.addLayer(drawnItems);
-
-                // Initialise the draw control and pass it the FeatureGroup of editable layers
-                var drawControl = new L.Control.Draw({
-                    edit: {
-                        featureGroup: drawnItems
-                    }
-                });
-                {{this.get_name()}}.addControl(drawControl);
-            {% endif %}
             {% if this.control_scale %}L.control.scale().addTo({{this.get_name()}});{% endif %}
+
+            var all_geo_layers = {};
+            {% for layer in this.geo_layers %}
+            var layer_color = "{{layer['color']}}";
+            var latlngs_unformatted = {{layer['geometry']}};
+            var latlngs_formatted = [];
+            for (k=0; k<latlngs_unformatted.length; k++) {
+               var latlngs_layer = L.latLng(latlngs_unformatted[k][0], latlngs_unformatted[k][1]);
+               latlngs_formatted[k] = latlngs_layer;
+            };
+            var geoLayer = L.polygon(latlngs_formatted);
+            geoLayer.setStyle({fillColor:layer_color, color:layer_color, weight:{{layer['weight']}}, fillOpacity: {{layer['opacity']}}});
+            geoLayer.bindPopup("<html><p><b>Type: </b>{{layer['type']}}</p><p><b>Name: </b>{{layer['name']}}</p></html>");
+            var geo_type_present = false;
+            var formatted_type = '<font color="'+layer_color+'">' + "{{layer['type']}}" + '</font>';
+            for (var type in all_geo_layers) {
+                if (type==formatted_type) {
+                    all_geo_layers[type].push(geoLayer);
+                    geo_type_present = true;
+                }
+            };
+            if (!geo_type_present) {
+                all_geo_layers[formatted_type] = [geoLayer];
+            };
+            {% endfor %}
+
+            var formatted_layers = {};
+            for (var type in all_geo_layers) {
+                var layer_group = L.layerGroup(all_geo_layers[type]);
+                formatted_layers[type] = layer_group;
+            };
+            L.control.layers(map_tiles, formatted_layers, {collapsed:true}).addTo({{this.get_name()}});
         {% endmacro %}
         """)
 
