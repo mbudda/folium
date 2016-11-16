@@ -510,12 +510,13 @@ class Marker(MacroElement):
     >>> Marker(location=[45.5, -122.3], popup='Portland, OR')
     >>> Marker(location=[45.5, -122.3], popup=folium.Popup('Portland, OR'))
     """
-    def __init__(self, location, popup=None, icon=None, id=None, layer_id=None):
+    def __init__(self, location, popup=None, icon=None, id=None, layer_id=None, icon_color='blue'):
         super(Marker, self).__init__()
         self._name = 'Marker'
         self.location = location
         self.id = id
         self.layer_id = layer_id
+        self.icon_color = icon_color
         if icon is not None:
             self.add_children(icon)
         if isinstance(popup, text_type) or isinstance(popup, binary_type):
@@ -529,7 +530,7 @@ class Marker(MacroElement):
             var {{this.get_name()}} = new walnutMarker(
                 [{{this.location[0]}},{{this.location[1]}}],
                 {
-                    icon: new L.Icon.Default(),
+                    icon: new L.AwesomeMarkers.icon({icon:'home', markerColor:'{{this.icon_color}}'}),
                     id: "{{this.id}}"
                     }
                 )
