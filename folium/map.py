@@ -106,6 +106,7 @@ class LegacyMap(MacroElement):
         super(LegacyMap, self).__init__()
         self._name = 'Map'
         self.draw = draw
+        self.geo_layers = geo_layers
         
         if not location:
             # If location is not passed we center and ignore zoom.
