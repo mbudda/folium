@@ -210,6 +210,10 @@ class LegacyMap(MacroElement):
             L.control.layers(map_tiles, formatted_layers, {collapsed:true}).addTo({{this.get_name()}});
         {% endmacro %}
         """)
+       
+    def get_name(self):
+        '''overrides macro element get_name to always have it called map'''
+        return 'map'
 
     def _repr_html_(self, **kwargs):
         """Displays the Map in a Jupyter notebook.
